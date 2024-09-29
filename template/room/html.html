@@ -1,0 +1,193 @@
+{% load static  %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
+
+        .chat-container {
+            display: flex;
+            height: 100vh;
+        }
+
+        .header {
+            background-color: #0078d4;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            flex: 0 0 50px;
+        }
+
+        .sidebar {
+            background-color: #fff;
+            width: 200px;
+            border-right: 1px solid #ccc;
+            padding: 10px;
+        }
+
+        .friends-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .friends-list li {
+            padding: 10px;
+            cursor: pointer;
+        }
+
+        .friends-list li:hover {
+            background-color: #e0e0e0;
+        }
+
+        .chat-room {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+        }
+
+        .chat-header {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-bottom: 1px solid #ccc;
+        }
+
+        .messages {
+            flex: 1;
+            background-color: #fff;
+            padding: 10px;
+            border: 1px solid #ccc;
+            overflow-y: auto;
+        }
+
+        #message-input {
+            width: calc(100% - 80px);
+            height: 50px;
+            padding: 10px;
+            margin-top: 10px;
+        }
+
+        button {
+            height: 50px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+       
+        <div class="sidebar">
+
+            {% if user.is_authenticated %}
+    <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            {{ user.username }}
+        </a>
+        <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+            <li class="dropdown-item">
+                <a href="{% url 'friend' %}">friends</a>
+
+                <ul>
+                    {% for relation in friends %}
+                      <li>
+                        {% if relation.user == request.user %}
+                          {{ relation.friend.username }}
+                        {% else %}
+                          {{ relation.user.username }}
+                        {% endif %}
+                      </li>
+                    {% endfor %}
+                  </ul>
+            </li>
+            <li class="dropdown-divider"></li>
+            <li class="dropdown-item">
+                <ul>
+                    {% for request in friend_requests %}
+                        <li>
+                            <a href="{% url 'friend'  %}"></a>
+                            {{ request.user.username }} 
+                            <a href="{% url 'accept_friend_request' request.user.id %}">Accept</a>
+                        </li>
+                    {% empty %}
+                        <li>No pending friend requests.</li>
+                    {% endfor %}
+                </ul>
+            </li>
+        </ul>
+    </li>
+{% endif %}
+
+        </div>        
+        <div class="chat-room">
+            <div class="chat-header" id="chat-header">
+                Select a friend to chat
+            </div>
+            <div class="messages" id="messages"></div>
+            <textarea id="message-input" placeholder="Type a message..."></textarea>
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    {{ room_name|json_script:"room-name" }}
+    <script src="{% static 'reconnecting-websocket.js' %}"></script>
+    <script>
+        const roomName = JSON.parse(document.getElementById('room-name').textContent);
+
+        const chatSocket = new ReconnectingWebSocket(
+            'ws://' + window.location.host + '/ws/chat/' + roomName + '/'
+        );
+
+        chatSocket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            const messageDiv = document.createElement('div');
+            messageDiv.textContent = data.message;
+            document.getElementById('messages').appendChild(messageDiv);
+        };
+
+        chatSocket.onclose = function(e) {
+            console.error('Chat socket closed unexpectedly');
+        };
+
+        document.querySelector('#message-input').onkeyup = function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        };
+
+        let currentFriend = '';
+
+        function selectFriend(friendName) {
+            currentFriend = friendName;
+            document.getElementById('chat-header').innerText = `Chat with ${currentFriend}`;
+            document.getElementById('messages').innerHTML = ''; // Clear previous messages
+        }
+
+        function sendMessage() {
+            const messageInput = document.getElementById('message-input');
+            const messageText = messageInput.value;
+
+            if (messageText && currentFriend) {
+                const messageDiv = document.createElement('div');
+                messageDiv.textContent = `You: ${messageText}`;
+                document.getElementById('messages').appendChild(messageDiv);
+
+                // Send message to the WebSocket server
+                chatSocket.send(JSON.stringify({
+                    'message': messageText,
+                    'to': currentFriend,
+                    'command' :'fetch_message'
+                }));
+
+                messageInput.value = ''; // Clear input after sending
+            } else {
+                alert('Please select a friend and type a message!');
+            }
+        }
+    </script>
+</body>
+</html>

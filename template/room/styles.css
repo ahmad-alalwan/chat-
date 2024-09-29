@@ -1,0 +1,72 @@
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f0f0f0;
+}
+
+.chat-container {
+    display: flex;
+    height: 100vh;
+}
+
+.header {
+    background-color: #0078d4;
+    color: white;
+    padding: 10px;
+    text-align: center;
+    flex: 0 0 50px;
+}
+
+.sidebar {
+    background-color: #fff;
+    width: 200px;
+    border-right: 1px solid #ccc;
+    padding: 10px;
+}
+
+.friends-list {
+    list-style: none;
+    padding: 0;
+}
+
+.friends-list li {
+    padding: 10px;
+    cursor: pointer;
+}
+
+.friends-list li:hover {
+    background-color: #e0e0e0;
+}
+
+.chat-room {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+}
+
+.chat-header {
+    background-color: #f5f5f5;
+    padding: 10px;
+    border-bottom: 1px solid #ccc;
+}
+
+.messages {
+    flex: 1;
+    background-color: #fff;
+    padding: 10px;
+    border: 1px solid #ccc;
+    overflow-y: auto;
+}
+
+#message-input {
+    width: calc(100% - 80px);
+    height: 50px;
+    padding: 10px;
+    margin-top: 10px;
+}
+
+button {
+    height: 50px;
+    margin-top: 10px;
+}
